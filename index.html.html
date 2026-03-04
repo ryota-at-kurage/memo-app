@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="メモ&リマインド">
+<title>📝 メモ &amp; リマインド</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  min-height:100vh;
+  background:linear-gradient(145deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);
+  font-family:'Noto Sans JP','Segoe UI',sans-serif;
+  color:#e2e8f0;
+  padding:0 0 100px 0;
+  -webkit-tap-highlight-color:transparent;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes notifSlide{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+.notif{padding:12px 20px;border-radius:12px;color:#fff;font-size:14px;font-weight:500;animation:notifSlide .3s ease-out;box-shadow:0 8px 32px rgba(0,0,0,.3);margin-bottom:8px}
+.notif.info{background:#065f46}
+.notif.error{background:#991b1b}
+.wrap{max-width:600px;margin:0 auto;padding:0 16px}
+h1{font-size:28px;font-weight:700;background:linear-gradient(135deg,#60a5fa,#a78bfa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px}
+.card{background:rgba(30,41,59,.6);border-radius:20px;padding:20px;margin-bottom:20px;border:1px solid rgba(148,163,184,.1);backdrop-filter:blur(12px)}
+.card.focused{border-color:rgba(59,130,246,.4)}
+textarea{width:100%;background:rgba(15,23,42,.5);border-radius:14px;padding:16px;border:1px solid rgba(148,163,184,.1);color:#e2e8f0;font-size:16px;outline:none;font-family:inherit;line-height:1.7;resize:none}
+textarea::placeholder{color:#64748b}
+.cat-btn,.pri-btn{border:none;color:#fff;cursor:pointer;font-weight:500;font-family:inherit;transition:all .15s}
+.cat-btn{padding:6px 14px;border-radius:20px;font-size:12px}
+.pri-btn{padding:5px 12px;border-radius:16px;font-size:11px}
+.save-btn{margin-left:auto;padding:10px 28px;border-radius:14px;border:none;background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(59,130,246,.3)}
+.tab-bar{display:flex;gap:4px;margin-bottom:16px;background:rgba(15,23,42,.4);border-radius:14px;padding:4px}
+.tab-btn{flex:1;padding:10px 0;border-radius:11px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.search-input{flex:1;min-width:140px;padding:10px 14px;border-radius:12px;border:1px solid rgba(148,163,184,.15);background:rgba(30,41,59,.5);color:#e2e8f0;font-size:13px;outline:none;font-family:inherit}
+.filter-select,.time-select{padding:10px 12px;border-radius:12px;border:1px solid rgba(148,163,184,.15);background:rgba(30,41,59,.8);color:#94a3b8;font-size:12px;outline:none;font-family:inherit}
+.date-input{padding:5px 10px;border-radius:10px;border:1px solid rgba(148,163,184,.2);background:rgba(15,23,42,.5);color:#94a3b8;font-size:12px;font-family:inherit}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.7)}
+.memo-item{border-radius:16px;padding:18px;animation:fadeIn .3s ease-out both;transition:all .3s ease}
+.memo-text{margin:0;font-size:14px;line-height:1.7;color:#e2e8f0;word-break:break-word}
+.tag{font-size:11px;padding:2px 10px;border-radius:12px;font-weight:500}
+.icon-btn{width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.check-btn{width:24px;height:24px;min-width:24px;border-radius:7px;margin-top:2px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.reminder-card{border-radius:16px;padding:14px 18px;cursor:grab;user-select:none;backdrop-filter:blur(12px);margin-bottom:8px;transition:all .3s ease}
+.done-btn{margin-left:auto;padding:8px 20px;border-radius:12px;border:none;cursor:pointer;font-weight:600;font-size:13px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-family:inherit;box-shadow:0 2px 12px rgba(16,185,129,.3)}
+.snooze-panel{background:rgba(15,23,42,.95);border-radius:14px;padding:14px 16px;margin-bottom:8px;margin-top:-4px;border:1px solid rgba(148,163,184,.15);animation:fadeIn .2s ease-out}
+.snooze-btn{padding:7px 14px;border-radius:10px;border:none;font-size:12px;cursor:pointer;font-weight:500;font-family:inherit}
+.settings-panel{background:rgba(15,23,42,.8);border-radius:12px;padding:12px 16px;margin-bottom:10px;border:1px solid rgba(148,163,184,.12);animation:fadeIn .2s ease-out}
+.stats{margin-top:24px;padding:16px;border-radius:14px;background:rgba(30,41,59,.4);border:1px solid rgba(148,163,184,.06);display:flex;justify-content:space-around;font-size:12px;color:#64748b}
+.stat-num{font-size:20px;font-weight:700}
+.completed-item{background:rgba(16,185,129,.06);border-radius:16px;padding:16px;border:1px solid rgba(16,185,129,.12);animation:fadeIn .3s ease-out both}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<div id="notif-area" style="position:fixed;top:16px;right:16px;z-index:1000;display:flex;flex-direction:column"></div>
+
+<div style="padding:32px 24px 20px;background:linear-gradient(180deg,rgba(15,23,42,.9) 0%,transparent 100%)">
+  <div class="wrap">
+    <h1>📝 メモ &amp; リマインド</h1>
+    <p style="margin:4px 0 0;font-size:13px;color:#64748b;font-weight:300">入力 or 🎤音声入力でメモ → リマインド → 完了</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="reminder-area"></div>
+
+  <div class="card" id="input-card">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:20px">✏️</span>
+      <span style="font-size:14px;font-weight:600;color:#e2e8f0">新しいメモ</span>
+      <span style="margin-left:auto;font-size:11px;color:#64748b;background:rgba(51,65,85,.4);padding:3px 10px;border-radius:8px">🎤 キーボード音声入力OK</span>
+    </div>
+    <textarea id="memo-input" rows="3" placeholder="ここをタップして入力...&#10;キーボード左下の🎤で音声入力もできます"></textarea>
+    <div id="memo-options" class="hidden" style="margin-top:14px;animation:fadeIn .3s ease-out">
+      <div id="cat-buttons" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div id="pri-buttons" style="display:flex;gap:4px"></div>
+        <input type="date" id="new-deadline" class="date-input">
+        <select id="new-time" class="date-input"></select>
+        <button class="save-btn" onclick="saveMemo()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn" id="tab-active" onclick="switchTab('active')">📋 未完了 (0)</button>
+    <button class="tab-btn" id="tab-completed" onclick="switchTab('completed')">✅ 完了済み (0)</button>
+  </div>
+
+  <div id="active-panel">
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+      <input type="text" class="search-input" id="search-input" placeholder="🔍 メモを検索..." oninput="renderMemos()">
+      <select class="filter-select" id="filter-select" onchange="renderMemos()">
+        <option value="all">すべて</option>
+      </select>
+    </div>
+    <div id="memo-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+
+  <div id="completed-panel" class="hidden">
+    <div id="completed-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  </div>
+
+  <div id="stats-area"></div>
+</div>
+
+<script>
+const CATEGORIES=[{id:"work",label:"仕事",icon:"💼",color:"#3B82F6"},{id:"meeting",label:"会議",icon:"🤝",color:"#8B5CF6"},{id:"personal",label:"個人",icon:"🏠",color:"#10B981"},{id:"other",label:"その他",icon:"📌",color:"#F59E0B"}];
+const PRIORITY=[{id:"high",label:"高",color:"#EF4444"},{id:"medium",label:"中",color:"#F59E0B"},{id:"low",label:"低",color:"#6B7280"}];
+const SNOOZE_OPTIONS=[{value:10,label:"10分"},{value:30,label:"30分"},{value:60,label:"1時間"},{value:120,label:"2時間"},{value:360,label:"6時間"},{value:720,label:"12時間"},{value:1440,label:"1日"}];
+const TIME_SLOTS=[];
+for(let h=0;h<24;h++)for(let m=0;m<60;m+=30)TIME_SLOTS.push((h<10?"0"+h:h)+":"+(m===0?"00":"30"));
+
+let state={memos:[],completed:[],defaultSnooze:30};
+let dismissed={};
+let currentTab="active";
+let newCat="work",newPri="medium";
+let editingId=null,editCat="work",editPri="medium";
+
+function load(){try{const d=JSON.parse(localStorage.getItem("memo-reminder-data"));if(d){state.memos=d.memos||[];state.completed=d.completed||[];state.defaultSnooze=d.defaultSnooze||30}}catch(e){}}
+function save(){localStorage.setItem("memo-reminder-data",JSON.stringify(state))}
+function notify(msg,type){const el=document.createElement("div");el.className="notif "+(type||"info");el.textContent=msg;document.getElementById("notif-area").appendChild(el);setTimeout(()=>el.remove(),4000)}
+function today(){return new Date().toISOString().split("T")[0]}
+
+function formatDate(d,t){
+  if(!d)return"";
+  const now=new Date();let target;
+  if(t)target=new Date(d+"T"+t+":00");else target=new Date(d+"T23:59:59");
+  const diff=target-now;const days=Math.ceil(diff/(1000*60*60*24));
+  const dt=new Date(d);const ds=(dt.getMonth()+1)+"/"+dt.getDate()+(t?" "+t:"");
+  if(diff<0)return ds+" (期限切れ)";if(days<=0)return ds+" (今日)";if(days===1)return ds+" (明日)";if(days<=3)return ds+" (あと"+days+"日)";return ds;
+}
+function getStatus(d,t){
+  if(!d)return"none";const now=new Date();let target;
+  if(t)target=new Date(d+"T"+t+":00");else target=new Date(d+"T23:59:59");
+  const ms=target-now;const hrs=ms/(1000*60*60);const days=ms/(1000*60*60*24);
+  if(ms<0)return"overdue";if(t&&hrs<=1)return"today";if(!t&&days<1)return"today";if(days<=2)return"soon";return"ok";
+}
+
+function initUI(){
+  // time slots
+  const sel=document.getElementById("new-time");
+  sel.innerHTML='<option value="">時間なし</option>'+TIME_SLOTS.map(t=>'<option value="'+t+'">'+t+'</option>').join("");
+  sel.value="09:00";
+  // filter
+  const fs=document.getElementById("filter-select");
+  CATEGORIES.forEach(c=>{const o=document.createElement("option");o.value=c.id;o.textContent=c.icon+" "+c.label;fs.appendChild(o)});
+  // cat buttons
+  renderCatButtons("cat-buttons",newCat,c=>{newCat=c;renderCatButtons("cat-buttons",newCat)});
+  // pri buttons
+  renderPriButtons("pri-buttons",newPri,p=>{newPri=p;renderPriButtons("pri-buttons",newPri)});
+  // date min
+  document.getElementById("new-deadline").min=today();
+  // input toggle
+  document.getElementById("memo-input").addEventListener("input",function(){
+    document.getElementById("memo-options").classList.toggle("hidden",!this.value.trim());
+  });
+  document.getElementById("memo-input").addEventListener("focus",()=>document.getElementById("input-card").classList.add("focused"));
+  document.getElementById("memo-input").addEventListener("blur",()=>document.getElementById("input-card").classList.remove("focused"));
+}
+
+function renderCatButtons(containerId,active,onClick){
+  const el=document.getElementById(containerId);
+  el.innerHTML=CATEGORIES.map(c=>'<button class="cat-btn" data-id="'+c.id+'" style="background:'+(active===c.id?c.color:"rgba(51,65,85,.5)")+'">'+c.icon+" "+c.label+'</button>').join("");
+  if(onClick)el.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>onClick(b.dataset.id)));
+}
+function renderPriButtons(containerId,active,onClick){
+  const el=document.getElementById(containerId);
+  el.innerHTML=PRIORITY.map(p=>'<button class="pri-btn" data-id="'+p.id+'" style="background:'+(active===p.id?p.color:"rgba(51,65,85,.5)")+'">'+p.label+'</button>').join("");
+  if(onClick)el.querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>onClick(b.dataset.id)));
+}
+
+function saveMemo(){
+  const text=document.getElementById("memo-input").value.trim();
+  if(!text)return;
+  const dl=document.getElementById("new-deadline").value||null;
+  const dt=document.getElementById("new-time").value||null;
+  state.memos.unshift({id:Date.now().toString(),text,category:newCat,priority:newPri,deadline:dl,deadlineTime:dt,createdAt:new Date().toISOString(),done:false});
+  save();
+  document.getElementById("memo-input").value="";
+  document.getElementById("memo-options").classList.add("hidden");
+  document.getElementById("new-deadline").value="";
+  document.getElementById("new-time").value="09:00";
+  notify("✅ メモを保存しました！");
+  renderAll();
+}
+
+function completeMemo(id){
+  const idx=state.memos.findIndex(m=>m.id===id);if(idx<0)return;
+  const m=Object.assign({},state.memos[idx],{done:true,completedAt:new Date().toISOString()});
+  state.completed.unshift(m);state.memos.splice(idx,1);save();
+  notify("🎉 完了済みに保存しました！");renderAll();
+}
+function deleteMemo(id){state.memos=state.memos.filter(m=>m.id!==id);save();notify("🗑️ 削除しました");renderAll()}
+function restoreMemo(id){
+  const idx=state.completed.findIndex(m=>m.id===id);if(idx<0)return;
+  const m=Object.assign({},state.completed[idx],{done:false,completedAt:undefined});
+  state.memos.unshift(m);state.completed.splice(idx,1);save();
+  notify("↩️ 未完了に戻しました");renderAll();
+}
+function deleteCompleted(id){state.completed=state.completed.filter(m=>m.id!==id);save();notify("🗑️ 削除しました");renderAll()}
+
+function startEdit(id){editingId=id;const m=state.memos.find(x=>x.id===id);editCat=m.category;editPri=m.priority;renderMemos()}
+function saveEditMemo(){
+  const m=state.memos.find(x=>x.id===editingId);if(!m)return;
+  const el=document.getElementById("edit-text-"+editingId);
+  m.text=el.value;m.category=editCat;m.priority=editPri;
+  m.deadline=document.getElementById("edit-date-"+editingId).value||null;
+  m.deadlineTime=document.getElementById("edit-time-"+editingId).value||null;
+  editingId=null;save();notify("✏️ 更新しました");renderAll();
+}
+function cancelEdit(){editingId=null;renderMemos()}
+
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById("active-panel").classList.toggle("hidden",tab!=="active");
+  document.getElementById("completed-panel").classList.toggle("hidden",tab!=="completed");
+  document.getElementById("tab-active").style.background=tab==="active"?"rgba(59,130,246,.2)":"transparent";
+  document.getElementById("tab-active").style.color=tab==="active"?"#93c5fd":"#64748b";
+  document.getElementById("tab-completed").style.background=tab==="completed"?"rgba(16,185,129,.2)":"transparent";
+  document.getElementById("tab-completed").style.color=tab==="completed"?"#6ee7b7":"#64748b";
+}
+
+function dismissReminder(id){
+  document.getElementById("snooze-"+id).classList.remove("hidden");
+}
+function confirmSnooze(id,min){
+  dismissed[id]={at:Date.now(),snooze:min};
+  const label=SNOOZE_OPTIONS.find(o=>o.value===min);
+  notify("⏰ "+(label?label.label:min+"分")+"後に再リマインドします");
+  renderReminders();
+}
+function toggleSettings(){
+  document.getElementById("settings-panel").classList.toggle("hidden");
+}
+function setDefaultSnooze(val){state.defaultSnooze=val;save();renderReminders()}
+
+function renderReminders(){
+  const area=document.getElementById("reminder-area");
+  const urgent=state.memos.filter(m=>{if(!m.deadline)return false;const s=getStatus(m.deadline,m.deadlineTime);return s==="overdue"||s==="today"});
+  const visible=urgent.filter(m=>{const d=dismissed[m.id];if(!d)return true;return Date.now()-d.at>(d.snooze||state.defaultSnooze)*60*1000});
+  if(!visible.length){area.innerHTML="";return}
+  let html='<div style="animation:slideDown .4s ease-out;margin-bottom:20px">';
+  html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:0 4px">';
+  html+='<span style="font-size:16px">🔔</span>';
+  html+='<span style="font-size:13px;font-weight:600;color:#fbbf24">リマインド ('+visible.length+'件)</span>';
+  html+='<span style="margin-left:auto;display:flex;align-items:center;gap:6px"><span style="font-size:11px;color:#64748b">スワイプでスヌーズ</span>';
+  html+='<button onclick="toggleSettings()" style="background:none;border:none;cursor:pointer;font-size:16px;color:#64748b;padding:2px">⚙️</button></span></div>';
+  // settings
+  html+='<div id="settings-panel" class="settings-panel hidden"><p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:500">🔧 デフォルトのリマインド間隔</p><div style="display:flex;gap:6px;flex-wrap:wrap">';
+  SNOOZE_OPTIONS.forEach(o=>{html+='<button class="snooze-btn" onclick="setDefaultSnooze('+o.value+')" style="background:'+(state.defaultSnooze===o.value?"rgba(59,130,246,.3)":"rgba(51,65,85,.4)")+';color:'+(state.defaultSnooze===o.value?"#93c5fd":"#94a3b8")+'">'+o.label+'</button>'});
+  html+='</div><p style="margin:8px 0 0;font-size:10px;color:#475569">※ スワイプ時に個別で間隔を変更することもできます</p></div>';
+
+  visible.forEach(m=>{
+    const cat=CATEGORIES.find(c=>c.id===m.category)||CATEGORIES[3];
+    const ds=getStatus(m.deadline,m.deadlineTime);
+    const bg=ds==="overdue"?"rgba(127,29,29,.85)":"rgba(120,53,15,.85)";
+    const bc=ds==="overdue"?"rgba(239,68,68,.4)":"rgba(245,158,11,.4)";
+    const lc=ds==="overdue"?"#fca5a5":"#fcd34d";
+    html+='<div class="reminder-card" style="background:'+bg+';border:1px solid '+bc+'" id="rc-'+m.id+'"';
+    html+=' ontouchstart="swipeStart(event,\''+m.id+'\')" ontouchmove="swipeMove(event,\''+m.id+'\')" ontouchend="swipeEnd(\''+m.id+'\')">';
+    html+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">';
+    html+='<span style="font-size:18px">'+(ds==="overdue"?"🚨":"⏰")+'</span>';
+    html+='<span style="font-size:11px;font-weight:600;letter-spacing:1px;color:'+lc+'">'+(ds==="overdue"?"期限切れ":"今日が期限")+'</span>';
+    html+='<span style="margin-left:auto;font-size:10px;color:rgba(255,255,255,.4)">← スワイプでスヌーズ →</span></div>';
+    html+='<p style="margin:0 0 10px;font-size:14px;line-height:1.6;color:#f1f5f9;word-break:break-word">'+esc(m.text)+'</p>';
+    html+='<div style="display:flex;align-items:center;gap:8px">';
+    html+='<span style="font-size:11px;padding:2px 10px;border-radius:12px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)">'+cat.icon+" "+cat.label+'</span>';
+    html+='<span style="font-size:11px;color:rgba(255,255,255,.5)">📅 '+formatDate(m.deadline,m.deadlineTime)+'</span>';
+    html+='<button class="done-btn" onclick="event.stopPropagation();completeMemo(\''+m.id+'\')">✓ 済み</button></div></div>';
+    // snooze picker
+    html+='<div id="snooze-'+m.id+'" class="snooze-panel hidden"><p style="margin:0 0 10px;font-size:12px;color:#94a3b8;font-weight:500">⏰ いつ再リマインドする？</p><div style="display:flex;gap:6px;flex-wrap:wrap">';
+    SNOOZE_OPTIONS.forEach(o=>{html+='<button class="snooze-btn" onclick="confirmSnooze(\''+m.id+'\','+o.value+')" style="background:'+(o.value===state.defaultSnooze?"rgba(59,130,246,.3)":"rgba(51,65,85,.5)")+';color:'+(o.value===state.defaultSnooze?"#93c5fd":"#cbd5e1")+'">'+o.label+'</button>'});
+    html+='</div><button onclick="document.getElementById(\'snooze-'+m.id+'\').classList.add(\'hidden\')" style="margin-top:8px;padding:4px 12px;border-radius:8px;border:none;background:transparent;color:#64748b;font-size:11px;cursor:pointer;font-family:inherit">キャンセル</button></div>';
+  });
+  html+='</div>';
+  area.innerHTML=html;
+}
+
+// Swipe handling
+let swipeData={};
+function swipeStart(e,id){swipeData[id]={x:e.touches[0].clientX}}
+function swipeMove(e,id){
+  if(!swipeData[id])return;
+  const dx=e.touches[0].clientX-swipeData[id].x;
+  const el=document.getElementById("rc-"+id);
+  if(el){el.style.transform="translateX("+dx+"px)";el.style.opacity=Math.max(0,1-Math.abs(dx)/200);el.style.transition="none"}
+}
+function swipeEnd(id){
+  if(!swipeData[id])return;
+  const el=document.getElementById("rc-"+id);
+  if(el){
+    const dx=parseInt(el.style.transform.replace(/[^-\d]/g,""))||0;
+    if(Math.abs(dx)>100){
+      el.style.transition="all .3s ease";el.style.transform="translateX("+(dx>0?300:-300)+"px)";el.style.opacity="0";
+      setTimeout(()=>dismissReminder(id),300);
+    }else{el.style.transition="all .3s ease";el.style.transform="translateX(0)";el.style.opacity="1"}
+  }
+  delete swipeData[id];
+}
+
+function renderMemos(){
+  const search=document.getElementById("search-input").value;
+  const filter=document.getElementById("filter-select").value;
+  const list=state.memos.filter(m=>(filter==="all"||m.category===filter)&&(!search||m.text.includes(search)));
+  const el=document.getElementById("memo-list");
+  if(!list.length){el.innerHTML='<div style="text-align:center;padding:48px;color:#475569;font-size:14px">'+(state.memos.length===0?"✏️ 上の入力欄からメモを追加しましょう":"該当するメモがありません")+'</div>';return}
+  el.innerHTML=list.map((m,i)=>{
+    const cat=CATEGORIES.find(c=>c.id===m.category)||CATEGORIES[3];
+    const pri=PRIORITY.find(p=>p.id===m.priority)||PRIORITY[1];
+    const ds=getStatus(m.deadline,m.deadlineTime);
+    const bg=ds==="overdue"?"rgba(127,29,29,.15)":ds==="today"?"rgba(120,53,15,.15)":"rgba(30,41,59,.6)";
+    const bc=ds==="overdue"?"rgba(239,68,68,.2)":ds==="today"?"rgba(245,158,11,.2)":"rgba(148,163,184,.08)";
+    if(editingId===m.id){
+      let h='<div class="memo-item" style="background:'+bg+';border:1px solid '+bc+'">';
+      h+='<textarea id="edit-text-'+m.id+'" style="width:100%;background:rgba(15,23,42,.5);border:1px solid rgba(148,163,184,.2);border-radius:10px;padding:12px;color:#e2e8f0;font-size:14px;resize:vertical;min-height:60px;outline:none;font-family:inherit;line-height:1.6">'+esc(m.text)+'</textarea>';
+      h+='<div id="edit-cats-'+m.id+'" style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"></div>';
+      h+='<div style="display:flex;gap:6px;margin-top:8px;align-items:center;flex-wrap:wrap">';
+      h+='<div id="edit-pris-'+m.id+'" style="display:flex;gap:4px"></div>';
+      h+='<input type="date" id="edit-date-'+m.id+'" value="'+(m.deadline||"")+'" class="date-input" style="font-size:11px;padding:4px 8px">';
+      h+='<select id="edit-time-'+m.id+'" class="date-input" style="font-size:11px;padding:4px 8px"><option value="">時間なし</option>'+TIME_SLOTS.map(t=>'<option value="'+t+'"'+(m.deadlineTime===t?" selected":"")+'>'+t+'</option>').join("")+'</select>';
+      h+='<div style="margin-left:auto;display:flex;gap:6px">';
+      h+='<button onclick="saveEditMemo()" style="padding:6px 16px;border-radius:10px;border:none;background:#3b82f6;color:#fff;font-size:12px;cursor:pointer;font-weight:500;font-family:inherit">保存</button>';
+      h+='<button onclick="cancelEdit()" style="padding:6px 16px;border-radius:10px;border:none;background:rgba(51,65,85,.5);color:#94a3b8;font-size:12px;cursor:pointer;font-family:inherit">取消</button>';
+      h+='</div></div></div>';
+      return h;
+    }
+    const dlColor=ds==="overdue"?"#fca5a5":ds==="today"?"#fcd34d":ds==="soon"?"#fdba74":"#64748b";
+    const dlW=ds==="overdue"||ds==="today"?600:400;
+    let h='<div class="memo-item" style="background:'+bg+';border:1px solid '+bc+';animation-delay:'+(i*.04)+'s">';
+    h+='<div style="display:flex;align-items:flex-start;gap:12px">';
+    h+='<button class="check-btn" onclick="completeMemo(\''+m.id+'\')" style="border:2px solid '+cat.color+'"></button>';
+    h+='<div style="flex:1"><p class="memo-text">'+esc(m.text)+'</p>';
+    h+='<div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">';
+    h+='<span class="tag" style="background:'+cat.color+'22;color:'+cat.color+'">'+cat.icon+" "+cat.label+'</span>';
+    h+='<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:'+pri.color+'22;color:'+pri.color+';font-weight:500">'+pri.label+'</span>';
+    if(m.deadline)h+='<span style="font-size:11px;color:'+dlColor+';font-weight:'+dlW+'">📅 '+formatDate(m.deadline,m.deadlineTime)+'</span>';
+    h+='<span style="font-size:10px;color:#475569">'+new Date(m.createdAt).toLocaleDateString("ja-JP")+'</span>';
+    h+='</div></div>';
+    h+='<div style="display:flex;gap:4px">';
+    h+='<button class="icon-btn" onclick="startEdit(\''+m.id+'\')" style="background:rgba(51,65,85,.4);color:#94a3b8">✏️</button>';
+    h+='<button class="icon-btn" onclick="deleteMemo(\''+m.id+'\')" style="background:rgba(127,29,29,.3);color:#fca5a5">🗑</button>';
+    h+='</div></div></div>';
+    return h;
+  }).join("");
+  // render edit cat/pri buttons if editing
+  if(editingId){
+    const eCatEl=document.getElementById("edit-cats-"+editingId);
+    const ePriEl=document.getElementById("edit-pris-"+editingId);
+    if(eCatEl){renderCatButtons("edit-cats-"+editingId,editCat,c=>{editCat=c;renderCatButtons("edit-cats-"+editingId,editCat,c2=>{editCat=c2;renderMemos()})})}
+    if(ePriEl){renderPriButtons("edit-pris-"+editingId,editPri,p=>{editPri=p;renderPriButtons("edit-pris-"+editingId,editPri,p2=>{editPri=p2;renderMemos()})})}
+  }
+}
+
+function renderCompleted(){
+  const el=document.getElementById("completed-list");
+  if(!state.completed.length){el.innerHTML='<div style="text-align:center;padding:48px;color:#475569;font-size:14px">まだ完了したメモはありません</div>';return}
+  el.innerHTML=state.completed.map((m,i)=>{
+    const cat=CATEGORIES.find(c=>c.id===m.category)||CATEGORIES[3];
+    let h='<div class="completed-item" style="animation-delay:'+(i*.04)+'s">';
+    h+='<div style="display:flex;align-items:flex-start;gap:12px">';
+    h+='<span style="width:24px;height:24px;min-width:24px;border-radius:7px;background:#10b981;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;margin-top:2px">✓</span>';
+    h+='<div style="flex:1"><p style="margin:0;font-size:14px;line-height:1.7;color:#94a3b8;text-decoration:line-through;word-break:break-word">'+esc(m.text)+'</p>';
+    h+='<div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">';
+    h+='<span style="font-size:11px;padding:2px 10px;border-radius:12px;background:'+cat.color+'15;color:'+cat.color+'99">'+cat.icon+" "+cat.label+'</span>';
+    if(m.completedAt)h+='<span style="font-size:10px;color:#4ade80">✅ '+new Date(m.completedAt).toLocaleDateString("ja-JP")+' 完了</span>';
+    h+='</div></div>';
+    h+='<div style="display:flex;gap:4px">';
+    h+='<button class="icon-btn" onclick="restoreMemo(\''+m.id+'\')" style="background:rgba(59,130,246,.15);color:#93c5fd">↩️</button>';
+    h+='<button class="icon-btn" onclick="deleteCompleted(\''+m.id+'\')" style="background:rgba(127,29,29,.2);color:#fca5a5">🗑</button>';
+    h+='</div></div></div>';
+    return h;
+  }).join("");
+}
+
+function renderStats(){
+  const total=state.memos.length+state.completed.length;
+  const urgent=state.memos.filter(m=>m.deadline&&["overdue","today","soon"].includes(getStatus(m.deadline,m.deadlineTime))).length;
+  if(!total){document.getElementById("stats-area").innerHTML="";return}
+  document.getElementById("stats-area").innerHTML='<div class="stats">'+
+    '<div style="text-align:center"><div class="stat-num" style="color:#e2e8f0">'+state.memos.length+'</div><div>未完了</div></div>'+
+    '<div style="text-align:center"><div class="stat-num" style="color:#10b981">'+state.completed.length+'</div><div>完了</div></div>'+
+    '<div style="text-align:center"><div class="stat-num" style="color:#ef4444">'+urgent+'</div><div>要対応</div></div>'+
+    '<div style="text-align:center"><div class="stat-num" style="color:#a78bfa">'+total+'</div><div>合計</div></div></div>';
+}
+
+function renderTabs(){
+  document.getElementById("tab-active").textContent="📋 未完了 ("+state.memos.length+")";
+  document.getElementById("tab-completed").textContent="✅ 完了済み ("+state.completed.length+")";
+}
+
+function renderAll(){renderReminders();renderMemos();renderCompleted();renderStats();renderTabs()}
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+
+// Snooze re-check
+setInterval(()=>{
+  let changed=false;const now=Date.now();
+  for(const[id,info]of Object.entries(dismissed)){
+    if(now-info.at>=(info.snooze||state.defaultSnooze)*60*1000){delete dismissed[id];changed=true}
+  }
+  if(changed)renderReminders();
+},30000);
+
+// Init
+load();initUI();renderAll();switchTab("active");
+</script>
+</body>
+</html>
